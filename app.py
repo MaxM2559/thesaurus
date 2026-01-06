@@ -25,6 +25,10 @@ import re
 app = Flask(__name__)
 CORS(app)
 
+nltk.download("wordnet")
+nltk.download("stopwords")
+nltk.download("averaged_perceptron_tagger")
+
 start_time = time.time()
 api = datamuse.Datamuse()
 STOPWORDS = set(stopwords.words("english"))
@@ -383,44 +387,48 @@ def syn_ranked_similarity(syn_list, origin_word):
 ##########
 # FLASK
  
-# @app.route("/get-synonyms", methods=["POST"])
-# def rank_usage():
-#     data = request.get_json()
+@app.route("/get-synonyms", methods=["POST"])
+def rank_usage():
+    data = request.get_json()
 
-#     sentence = data.get("sentence", "").strip()
-#     target_word = data.get("word", "").strip()
-#     top_n = data.get("top_n")
-#     threshold = data.get("threshold")
+    sentence = data.get("sentence", "").strip()
+    target_word = data.get("word", "").strip()
+    top_n = data.get("top_n")
+    threshold = data.get("threshold")
 
-#     if not sentence or not target_word:
-#         return jsonify([])
+    if not sentence or not target_word:
+        return jsonify([])
 
-#     results = rank_syn_usage(
-#         sentence,
-#         target_word,
-#         top_n=top_n,
-#         threshold=threshold
-#     )
+    results = rank_syn_usage(
+        sentence,
+        target_word,
+        top_n=top_n,
+        threshold=threshold
+    )
 
-#     results_alt = syn_ranked_similarity(results, target_word)
+    results_alt = syn_ranked_similarity(results, target_word)
 
-#     # Convert tuples to JSON-safe format
-#     response = {
-#         "context_rank": [
-#             {"word": syn, "score": float(score)}
-#             for syn, score in results
-#         ],
-#         "similarity_rank": [
-#             {"word": syn, "score": float(score)}
-#             for syn, score in results_alt
-#         ]
-#     }
+    # Convert tuples to JSON-safe format
+    response = {
+        "context_rank": [
+            {"word": syn, "score": float(score)}
+            for syn, score in results
+        ],
+        "similarity_rank": [
+            {"word": syn, "score": float(score)}
+            for syn, score in results_alt
+        ]
+    }
 
-#     return jsonify(response)
+    return jsonify(response)
 
 # if __name__ == "__main__":
 #     app.run(debug=True)
 
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
 
 ##########
 
