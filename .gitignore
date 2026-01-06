@@ -21,9 +21,10 @@ Thumbs.db
 *.log
 
 # Model artifacts (handled separately)
-*.npy
-*.kv
 *.bin
 *.vec
+
+ft_model_pruned.kv
+ft_model_pruned.kv.vectors.npy
 
 todo

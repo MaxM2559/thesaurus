@@ -1,3 +1,4 @@
+import os
 # WORDNET
 import nltk
 from nltk.corpus import wordnet as wn
@@ -34,12 +35,11 @@ api = datamuse.Datamuse()
 STOPWORDS = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()
 
-
 ## FASTTEXT MODEL ##########
 # -- setup --
 # ft_model = KeyedVectors.load_word2vec_format(model_path, binary=False)
 # ----
-ft_model = KeyedVectors.load("ft_model_pruned.kv", mmap='r')
+ft_model = KeyedVectors.load("ft_model_pruned_85k.kv", mmap='r')
 # ----
 ### For Pruning code see pruning.py
 
@@ -349,11 +349,10 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     return results
 
 # EX USAGE
-# test = rank_syn_usage(
-#     "we are walking to the bank",
-#     "walking")
-# print(test)
-
+# print(rank_syn_usage(
+#     "I deposited money at the bank",
+#     "bank"
+#     ))
 
 def syn_ranked_similarity(syn_list, origin_word):
     """
@@ -381,8 +380,6 @@ def syn_ranked_similarity(syn_list, origin_word):
 
     final = sorted_first + end 
     return  final
-
-    
 
 ##########
 # FLASK
@@ -424,7 +421,6 @@ def rank_usage():
 
 # if __name__ == "__main__":
 #     app.run(debug=True)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
