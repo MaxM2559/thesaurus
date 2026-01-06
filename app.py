@@ -384,6 +384,10 @@ def syn_ranked_similarity(syn_list, origin_word):
 ##########
 # FLASK
  
+@app.route("/")
+def index():
+    return render_template("index.html")
+
 @app.route("/get-synonyms", methods=["POST"])
 def rank_usage():
     data = request.get_json()
