@@ -24,7 +24,6 @@ document.getElementById('two-input-form').addEventListener('submit', function (e
     const word = document.getElementById('inputB').value.trim();
     const result = document.getElementById('result');
     
-    console.log(sentence.length)
     // Error handling
     if (!sentence.includes(word)) {
         result.innerHTML = `
@@ -66,7 +65,7 @@ document.getElementById('two-input-form').addEventListener('submit', function (e
     result.innerHTML = "<div class='muted'>Loading...</div>";
 
     // fetching logic for flask
-    fetch("http://127.0.0.1:5000/get-synonyms", {
+    fetch("/get-synonyms", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
