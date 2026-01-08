@@ -76,7 +76,12 @@ document.getElementById('two-input-form').addEventListener('submit', function (e
             top_n: 10
         })
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`Server error: ${res.status}`);
+        }
+        return res.json();
+    })
     .then(data => {
         cachedResults.context = data.context_rank;
         cachedResults.similarity = data.similarity_rank;

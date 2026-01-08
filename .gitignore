@@ -28,3 +28,8 @@ ft_model_pruned.kv
 ft_model_pruned.kv.vectors.npy
 
 todo
+
+nlp_env/
+__pycache__/
+*.pyc
+.env
