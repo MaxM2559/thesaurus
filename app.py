@@ -26,9 +26,6 @@ import re
 app = Flask(__name__)
 CORS(app)
 
-nltk.download("wordnet")
-nltk.download("stopwords")
-nltk.download("averaged_perceptron_tagger")
 
 start_time = time.time()
 api = datamuse.Datamuse()
@@ -390,12 +387,12 @@ def index():
 
 @app.route("/get-synonyms", methods=["POST"])
 def rank_usage():
-    data = request.get_json()
+    data = request.get_json(force=True)
 
     sentence = data.get("sentence", "").strip()
     target_word = data.get("word", "").strip()
-    top_n = data.get("top_n")
-    threshold = data.get("threshold")
+    top_n = data.get("top_n", 10)
+    threshold = data.get("threshold", None)
 
     if not sentence or not target_word:
         return jsonify([])
