@@ -31,11 +31,6 @@ CORS(app)
 NLTK_DATA_DIR = os.path.join(os.path.dirname(__file__), "nltk_data")
 nltk.data.path.append(NLTK_DATA_DIR)
 
-for resource in ["stopwords", "wordnet", "averaged_perceptron_tagger"]:
-    try:
-        nltk.data.find(resource)
-    except LookupError:
-        nltk.download(resource, download_dir=NLTK_DATA_DIR)
 
 # start_time = time.time()
 api = datamuse.Datamuse()
