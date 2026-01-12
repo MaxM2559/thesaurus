@@ -41,7 +41,10 @@ lemmatizer = WordNetLemmatizer()
 # -- setup --
 # ft_model = KeyedVectors.load_word2vec_format(model_path, binary=False)
 # ----
+#print
+print('loading ft_model')
 ft_model = KeyedVectors.load("ft_model_pruned_85k.kv", mmap='r')
+print('ft_model loaded')
 # ----
 ### For Pruning code see pruning.py
 
@@ -115,7 +118,7 @@ def is_morphological_variant(candidate, query):
         or query.startswith(candidate)
     )
 
-def clean_fasttext_results(query, topn=50, final_k=10):
+def clean_fasttext_results(query, topn=25, final_k=10):
     """
     Retrieve and clean FastText similarity results for a query word.
     
@@ -127,6 +130,9 @@ def clean_fasttext_results(query, topn=50, final_k=10):
     target_pos = get_dominant_pos(query)
 
     raw_results = ft_model.most_similar(query, topn=topn)
+
+    #print
+    print('[clean_fasttext_results] get raw results from ft_model')
 
     cleaned = []
     for word, score in raw_results:
@@ -170,7 +176,6 @@ def rerank_smart(query, candidates):
     reranked = []
 
     q_pos_set, q_lemmas = get_pos_and_lemmas(query)
-    # print(q_pos_set, q_lemmas)
     for cand in candidates:
         if semantic_compatible(cand, q_pos_set, q_lemmas):
             reranked.append(cand)
@@ -235,14 +240,13 @@ def synonym_bank(word:str, k=20, topn=100):
 
     returns a list of candidate words
     """
-    # check if word exists
-    if word not in ft_model:
-        return 'word not found'
     
     first_syn_set = set()
 
     # fasttext synonym bank
     fastext_bank = faststext_synonyms(word, k, topn)
+    #print
+    print('[synonym_bank] generated fasttext syn bank in synonym_bank')
     # datamust synonym bank
     datamuse_bank = datamuse_synonyms(word, 10)
 
@@ -261,6 +265,9 @@ def synonym_bank(word:str, k=20, topn=100):
         if " " in word:
             final_list.remove(word)
 
+    #print
+    print('[synonym_bank] finish synonym_bank')
+
     return final_list
 
 def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshold=None):
@@ -276,8 +283,10 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     
     returns List of (synonym, similarity_score) tuples, sorted by score
     """
-    
+    #print
+    print('[rank_synonyms] starting rank_synonyms')
     model = SentenceTransformer('all-MiniLM-L6-v2')
+    print('[rank_synonyms] loaded model from rank_synonyms')
     
     # Use word boundary replacement
     def replace_word(sentence, old_word, new_word):
@@ -296,12 +305,18 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     original_embedding = model.encode(original_sentence)
     candidate_embeddings = model.encode(candidates)
     
+    #print
+    print('[rank_synonyms] getting all candidates and embedding them w sentence transformer')
+
     # Calculate similarities
     similarities = cosine_similarity(
         original_embedding.reshape(1, -1),
         candidate_embeddings
     )[0]
     
+    #print
+    print('[rank_synonyms] calculating cosine similarities')
+
     # Rank
     ranked = sorted(zip(synonyms, similarities), key=lambda x: x[1], reverse=True)
     
@@ -335,6 +350,9 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     if target_word not in ft_model:
         return []
     
+    #print
+    print('[rank_syn_usage] check if word in model')
+    
     synonyms = synonym_bank(target_word)
     if not synonyms:
         return []
@@ -346,6 +364,9 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
         top_n,
         threshold
     )
+
+    #print
+    print('[rank_synonyms] finish rank_synonyms')
 
     results = results[:10]
     return results
@@ -392,6 +413,8 @@ def index():
 
 @app.route("/get-synonyms", methods=["POST"])
 def rank_usage():
+    #print
+    print("HIT /get-synonyms", flush=True)
     data = request.get_json(force=True)
 
     sentence = data.get("sentence", "").strip()
@@ -408,6 +431,8 @@ def rank_usage():
         top_n=top_n,
         threshold=threshold
     )
+    #print
+    print("AFTER rank_syn_usage", flush=True)
 
     results_alt = syn_ranked_similarity(results, target_word)
 
