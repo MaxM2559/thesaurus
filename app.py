@@ -42,9 +42,23 @@ lemmatizer = WordNetLemmatizer()
 # ft_model = KeyedVectors.load_word2vec_format(model_path, binary=False)
 # ----
 #print
-print('loading ft_model')
-ft_model = KeyedVectors.load("ft_model_pruned_85k.kv", mmap='r')
-print('ft_model loaded')
+# print('loading ft_model')
+# ft_model = KeyedVectors.load("ft_model_pruned_85k.kv", mmap='r')
+# print('ft_model loaded')
+
+ft_model = None
+ft_vocab = None
+
+def get_model():
+    global ft_model, ft_vocab
+    if ft_model is None:
+        ft_model = KeyedVectors.load(
+            "ft_model_pruned_85k.kv",
+            mmap="r"
+        )
+        # THIS is the key fix
+        ft_vocab = set(ft_model.key_to_index.keys())
+    return ft_model
 # ----
 ### For Pruning code see pruning.py
 
@@ -347,7 +361,10 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     
     returns a list of sets containing the top candidate and respective score
     """
-    if target_word not in ft_model:
+    #print
+    print('[rank_syn_usage] starting rank_syn_usage')
+    if target_word not in ft_vocab:
+        ## CHANGE  to ft_vocab from ft_model
         return []
     
     #print
@@ -413,6 +430,8 @@ def index():
 
 @app.route("/get-synonyms", methods=["POST"])
 def rank_usage():
+    print('[rank_usage] loading ft_model and ft_vocab')
+    model = get_model()
     #print
     print("HIT /get-synonyms", flush=True)
     data = request.get_json(force=True)
