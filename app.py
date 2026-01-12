@@ -140,9 +140,12 @@ def clean_fasttext_results(query, topn=25, final_k=10):
     :topn: number of FastText neighbors to retrieve
     :final_k: number of clean results to return
     """
+    print('[clean_fasttext_results] start', flush=True)
+
     query = query.lower()
     target_pos = get_dominant_pos(query)
 
+    print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()')
     raw_results = ft_model.most_similar(query, topn=topn)
 
     #print
@@ -200,6 +203,7 @@ def rerank_smart(query, candidates):
 # SYNONYM BANK HELPERS
 
 def faststext_synonyms(word: str, k: int, topn=100):
+    print('[faststext_synonyms] starting func -> clean_fasttext_results', flush=True)
     results = clean_fasttext_results(word, topn=topn, final_k=k)
     final = []
 
@@ -254,6 +258,7 @@ def synonym_bank(word:str, k=20, topn=100):
 
     returns a list of candidate words
     """
+    print('[synonym_bank] start')
     
     first_syn_set = set()
 
@@ -382,6 +387,9 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     synonyms = synonym_bank(target_word)
     if not synonyms:
         return []
+
+    print('[rank_syn_usage] post synonym bank',flush=True)
+
 
     results = rank_synonyms(
         sentance,
