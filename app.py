@@ -146,7 +146,7 @@ def clean_fasttext_results(query, topn=25, final_k=10):
     raw_results = ft_model.most_similar(query, topn=topn)
 
     #print
-    print('[clean_fasttext_results] get raw results from ft_model')
+    print('[clean_fasttext_results] get raw results from ft_model', flush=True)
 
     cleaned = []
     for word, score in raw_results:
@@ -260,7 +260,7 @@ def synonym_bank(word:str, k=20, topn=100):
     # fasttext synonym bank
     fastext_bank = faststext_synonyms(word, k, topn)
     #print
-    print('[synonym_bank] generated fasttext syn bank in synonym_bank')
+    print('[synonym_bank] generated fasttext syn bank in synonym_bank',flush=True)
     # datamust synonym bank
     datamuse_bank = datamuse_synonyms(word, 10)
 
@@ -280,9 +280,17 @@ def synonym_bank(word:str, k=20, topn=100):
             final_list.remove(word)
 
     #print
-    print('[synonym_bank] finish synonym_bank')
+    print('[synonym_bank] finish synonym_bank',flush=True)
 
     return final_list
+
+sent_model = None
+
+def get_sentence_model():
+    global sent_model
+    if sent_model is None:
+        sent_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return sent_model
 
 def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshold=None):
     """
@@ -298,9 +306,10 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     returns List of (synonym, similarity_score) tuples, sorted by score
     """
     #print
-    print('[rank_synonyms] starting rank_synonyms')
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    print('[rank_synonyms] loaded model from rank_synonyms')
+    print('[rank_synonyms] starting rank_synonyms',flush=True)
+    # model = SentenceTransformer('all-MiniLM-L6-v2')
+    model = get_sentence_model()
+    print('[rank_synonyms] loaded model from rank_synonyms',flush=True)
     
     # Use word boundary replacement
     def replace_word(sentence, old_word, new_word):
@@ -320,7 +329,7 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     candidate_embeddings = model.encode(candidates)
     
     #print
-    print('[rank_synonyms] getting all candidates and embedding them w sentence transformer')
+    print('[rank_synonyms] getting all candidates and embedding them w sentence transformer',flush=True)
 
     # Calculate similarities
     similarities = cosine_similarity(
@@ -329,7 +338,7 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     )[0]
     
     #print
-    print('[rank_synonyms] calculating cosine similarities')
+    print('[rank_synonyms] calculating cosine similarities',flush=True)
 
     # Rank
     ranked = sorted(zip(synonyms, similarities), key=lambda x: x[1], reverse=True)
@@ -362,13 +371,13 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     returns a list of sets containing the top candidate and respective score
     """
     #print
-    print('[rank_syn_usage] starting rank_syn_usage')
+    print('[rank_syn_usage] starting rank_syn_usage',flush=True)
     if target_word not in ft_vocab:
         ## CHANGE  to ft_vocab from ft_model
         return []
     
     #print
-    print('[rank_syn_usage] check if word in model')
+    print('[rank_syn_usage] check if word in model',flush=True)
     
     synonyms = synonym_bank(target_word)
     if not synonyms:
@@ -383,7 +392,7 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     )
 
     #print
-    print('[rank_synonyms] finish rank_synonyms')
+    print('[rank_synonyms] finish rank_synonyms',flush=True)
 
     results = results[:10]
     return results
@@ -430,7 +439,7 @@ def index():
 
 @app.route("/get-synonyms", methods=["POST"])
 def rank_usage():
-    print('[rank_usage] loading ft_model and ft_vocab')
+    print('[rank_usage] loading ft_model and ft_vocab',flush=True)
     model = get_model()
     #print
     print("HIT /get-synonyms", flush=True)
@@ -444,12 +453,28 @@ def rank_usage():
     if not sentence or not target_word:
         return jsonify([])
 
-    results = rank_syn_usage(
-        sentence,
-        target_word,
-        top_n=top_n,
-        threshold=threshold
-    )
+    #################
+    print("ABOUT TO CALL rank_syn_usage", flush=True)
+    try:
+        results = rank_syn_usage(
+            sentence,
+            target_word,
+            top_n=top_n,
+            threshold=threshold
+        )
+        print("RETURNED FROM rank_syn_usage", flush=True)
+    except Exception as e:
+        print("EXCEPTION CALLING rank_syn_usage:", repr(e), flush=True)
+        raise
+    ################
+
+    # results = rank_syn_usage(
+    #     sentence,
+    #     target_word,
+    #     top_n=top_n,
+    #     threshold=threshold
+    # )
+
     #print
     print("AFTER rank_syn_usage", flush=True)
 
