@@ -56,7 +56,6 @@ def get_model():
             "ft_model_pruned_85k.kv",
             mmap="r"
         )
-        # THIS is the key fix
         ft_vocab = set(ft_model.key_to_index.keys())
     return ft_model
 # ----
@@ -146,7 +145,8 @@ def clean_fasttext_results(query, topn=25, final_k=10):
     target_pos = get_dominant_pos(query)
 
     print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()', flush=True)
-    raw_results = ft_model.most_similar(query, topn=topn)
+    model = get_model()
+    raw_results = model.most_similar(query, topn=topn)
 
     #print
     print('[clean_fasttext_results] get raw results from ft_model', flush=True)
