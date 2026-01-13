@@ -145,7 +145,7 @@ def clean_fasttext_results(query, topn=25, final_k=10):
     query = query.lower()
     target_pos = get_dominant_pos(query)
 
-    print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()')
+    print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()', flush=True)
     raw_results = ft_model.most_similar(query, topn=topn)
 
     #print
