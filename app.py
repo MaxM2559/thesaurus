@@ -71,7 +71,12 @@ def get_dominant_pos(word):
 
     returns 'v' for verb, 'n' for noun, 's' for adjective
     """
+    print("[get_dominant_pos] called", flush=True)
+
+    print("[get_dominant_pos] before wn.synsets", flush=True)
     synsets = wn.synsets(word)
+    print("[get_dominant_pos] after wn.synsets", flush=True)
+
     if not synsets:
         return None
 
@@ -142,7 +147,8 @@ def clean_fasttext_results(query, topn=25, final_k=10):
     print('[clean_fasttext_results] start', flush=True)
 
     query = query.lower()
-    target_pos = get_dominant_pos(query)
+    ## COMMENTED OUT FOR NOW
+    # target_pos = get_dominant_pos(query)
 
     print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()', flush=True)
     model = get_model()
@@ -156,16 +162,19 @@ def clean_fasttext_results(query, topn=25, final_k=10):
         word = word.lower()
 
         # stopwords & short junk
+        print('[clean_fasttext_results] stopwords')
         if word in STOPWORDS or len(word) <= 2:
             continue
 
         # morphology filter
+        print('[clean_fasttext_results] morphological variant')
         if is_morphological_variant(word, query):
             continue
 
         # POS filter (only if WordNet knows the query POS)
-        if target_pos and not has_pos(word, target_pos):
-            continue
+        # print('[clean_fasttext_results] target_pos')
+        # if target_pos and not has_pos(word, target_pos):
+        #     continue
 
         cleaned.append((word, score))
 
