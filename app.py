@@ -65,27 +65,7 @@ def get_model():
 ################### 
 # HELPERS FOR clean_fasttext_results()
 
-def get_dominant_pos(word):
-    """
-    Determine the dominant WordNet POS for a word
-
-    returns 'v' for verb, 'n' for noun, 's' for adjective
-    """
-    print("[get_dominant_pos] called", flush=True)
-
-    print("[get_dominant_pos] before wn.synsets", flush=True)
-    synsets = wn.synsets(word)
-    print("[get_dominant_pos] after wn.synsets", flush=True)
-
-    if not synsets:
-        return None
-
-    pos_counts = {}
-    for syn in synsets:
-        pos = syn.pos()
-        pos_counts[pos] = pos_counts.get(pos, 0) + 1
-
-    return max(pos_counts, key=pos_counts.get)
+ 
 
 def has_pos(word, target_pos):
     """
@@ -136,7 +116,7 @@ def is_morphological_variant(candidate, query):
         or query.startswith(candidate)
     )
 
-def clean_fasttext_results(query, topn=25, final_k=10):
+def clean_fasttext_results(query, topn=15, final_k=10):
     """
     Retrieve and clean FastText similarity results for a query word.
     
@@ -152,7 +132,13 @@ def clean_fasttext_results(query, topn=25, final_k=10):
 
     print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()', flush=True)
     model = get_model()
-    raw_results = model.most_similar(query, topn=topn)
+    # raw_results = model.most_similar(query, topn=min(topn, 15))
+    try:
+        print('[clean_fasttext_results] calling most_similar()', flush=True)
+        raw_results = model.most_similar(query, topn=min(topn, 15))
+    except Exception as e:
+        print(f"[clean_fasttext_results] FastText failed: {e}", flush=True)
+        return []
 
     #print
     print('[clean_fasttext_results] get raw results from ft_model', flush=True)
