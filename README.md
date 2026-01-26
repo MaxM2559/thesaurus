@@ -3,8 +3,6 @@ This project is a thesaurus that uses the context of the surrounding sentence/te
 
 This project was created as an exploration of using "dumb" tools in response to my own increasing use of AI in my writing. However, for finding synonyms, I find myself often using websites like Dictionary.com because these sites are faster and provide a more bare bones tool that forces people like me to more involved in choosing which word fits best. This project is a test of a more improved version of an online thesaurus. This trend in dumber tech can be seen in the rise with "dumb" smartphones and disposable cameras.
 
----
-
 ## Demo
 [https://github.com/user-attachments/assets/a1e33e74-1af7-4301-895f-1fe3224e3f18](https://github.com/user-attachments/assets/c6a5db57-33f8-4de6-ad01-5d77b41f1f44)
 
@@ -31,16 +29,12 @@ The kids played basketball on the court.
 The program crashed unexpectedly.
 The car crashed into a guardrail.
 
----
-
 ## Methods
 The general structure for this tool is gathering synonyms, filtering, and then measuring how each candidate synonym fits in the sentence with embeddings, all in Python. The synonyms are gathered only using fastText text classification library and the datamuse API. I have tried using Wordnet and other Python tools (like AyDictionary and GloVe) but through testing I have foudn fastText and datamuse to be the best combination for results and speed. Suggestions for potential better alternatives are listed in the improvements section. Also, the filtering is not heavy since fastText and datamuse already draw on words based on lemmas.
 
 The final step involves embedding the original sentence to a vector (with fastText), and then replacing the original word in the sentence with each candidate synonym, getting the candidate embedding, and scoring the two vectors with cosine similarity. The top 10 highest scoring candidate synonyms are then shown to the user.
 
 This process is not perfect, so there is an option for an extra final step of directly comparing the final 10 words to the original word (without context) with fastText and scoring based on similarity. This option is shown as the "Word Simlarity" button. This process still involves the context of the input text for the selection of the candidate words.
-
----
 
 ## Improvements
 I spent a long while trying to get this project hosted on Render. I tried pruning the FastText model and various methods of uploading vocabulary, but it seems I can't skate around the general 502 error. 
