@@ -41,8 +41,7 @@ lemmatizer = WordNetLemmatizer()
 # -- setup --
 # ft_model = KeyedVectors.load_word2vec_format(model_path, binary=False)
 # ----
-#print
-# print('loading ft_model')
+## TRIM MODEL
 # ft_model = KeyedVectors.load("ft_model_pruned_85k.kv", mmap='r')
 # print('ft_model loaded')
 
@@ -124,43 +123,28 @@ def clean_fasttext_results(query, topn=15, final_k=10):
     :topn: number of FastText neighbors to retrieve
     :final_k: number of clean results to return
     """
-    print('[clean_fasttext_results] start', flush=True)
 
     query = query.lower()
-    ## COMMENTED OUT FOR NOW
-    # target_pos = get_dominant_pos(query)
 
-    print('[clean_fasttext_results] attempt to find most similar words with ft_model.most_similar()', flush=True)
     model = get_model()
-    # raw_results = model.most_similar(query, topn=min(topn, 15))
+
     try:
-        print('[clean_fasttext_results] calling most_similar()', flush=True)
         raw_results = model.most_similar(query, topn=min(topn, 15))
     except Exception as e:
-        print(f"[clean_fasttext_results] FastText failed: {e}", flush=True)
         return []
 
-    #print
-    print('[clean_fasttext_results] get raw results from ft_model', flush=True)
 
     cleaned = []
     for word, score in raw_results:
         word = word.lower()
 
         # stopwords & short junk
-        print('[clean_fasttext_results] stopwords')
         if word in STOPWORDS or len(word) <= 2:
             continue
 
         # morphology filter
-        print('[clean_fasttext_results] morphological variant')
         if is_morphological_variant(word, query):
             continue
-
-        # POS filter (only if WordNet knows the query POS)
-        # print('[clean_fasttext_results] target_pos')
-        # if target_pos and not has_pos(word, target_pos):
-        #     continue
 
         cleaned.append((word, score))
 
@@ -198,14 +182,11 @@ def rerank_smart(query, candidates):
 # SYNONYM BANK HELPERS
 
 def faststext_synonyms(word: str, k: int, topn=100):
-    print('[faststext_synonyms] starting func -> clean_fasttext_results', flush=True)
     results = clean_fasttext_results(word, topn=topn, final_k=k)
     final = []
 
-    # if no score: 
     for w, s in results:
         final.append(w)
-    # # # #
 
     if final:
         return final
@@ -222,22 +203,22 @@ def datamuse_synonyms(word, max_results=10):
     return [item["word"] for item in results]
 
 def get_all_forms(word):
-    """
-    Get all inflected forms or target word using lemminflect.
-    """
-    
     forms = set()
-    forms.add(word.lower())
+    word = word.lower()
+    forms.add(word)
     
-    # Try different POS tags
     pos_tags = ['NOUN', 'VERB', 'ADJ', 'ADV']
     
     for pos in pos_tags:
-        inflections = lemminflect.getAllInflections(word, upos=pos)
-        for form_list in inflections.values():
-            forms.update(form_list)
+        lemmas = lemminflect.getLemma(word, upos=pos)
+        
+        for lemma in lemmas:
+            inflections = lemminflect.getAllInflections(lemma, upos=pos)
+            for form_list in inflections.values():
+                forms.update(form_list)
     
     return forms
+
 
 ##############################
 # SYNONYM BANK 
@@ -253,21 +234,19 @@ def synonym_bank(word:str, k=20, topn=100):
 
     returns a list of candidate words
     """
-    print('[synonym_bank] start')
     
     first_syn_set = set()
 
     # fasttext synonym bank
     fastext_bank = faststext_synonyms(word, k, topn)
-    #print
-    print('[synonym_bank] generated fasttext syn bank in synonym_bank',flush=True)
+
     # datamust synonym bank
     datamuse_bank = datamuse_synonyms(word, 10)
 
     first_syn_set |= set(fastext_bank + datamuse_bank) 
     syn_list = list(first_syn_set)
 
-    lemmas = get_all_forms(lemmatize('walking', get_pos('walking')).pop())
+    lemmas = get_all_forms(lemmatize(word, get_pos(word)).pop())
 
     for word in syn_list:
         if word in lemmas:
@@ -279,8 +258,6 @@ def synonym_bank(word:str, k=20, topn=100):
         if " " in word:
             final_list.remove(word)
 
-    #print
-    print('[synonym_bank] finish synonym_bank',flush=True)
 
     return final_list
 
@@ -305,21 +282,15 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     
     returns List of (synonym, similarity_score) tuples, sorted by score
     """
-    #print
-    print('[rank_synonyms] starting rank_synonyms',flush=True)
     # model = SentenceTransformer('all-MiniLM-L6-v2')
     model = get_sentence_model()
-    print('[rank_synonyms] loaded model from rank_synonyms',flush=True)
     
     # Use word boundary replacement
     def replace_word(sentence, old_word, new_word):
         pattern = r'\b' + re.escape(old_word) + r'\b'
-        # Adding count=1 only replaces the first occurrence
         return re.sub(pattern, new_word, sentence, count=1, flags=re.IGNORECASE)
 
     # Batch encode
-
-
     candidates = []
     for syn in synonyms:
         candidates.append(replace_word(original_sentence, target_word, syn))
@@ -328,17 +299,12 @@ def rank_synonyms(original_sentence, target_word, synonyms, top_n=None, threshol
     original_embedding = model.encode(original_sentence)
     candidate_embeddings = model.encode(candidates)
     
-    #print
-    print('[rank_synonyms] getting all candidates and embedding them w sentence transformer',flush=True)
 
     # Calculate similarities
     similarities = cosine_similarity(
         original_embedding.reshape(1, -1),
         candidate_embeddings
     )[0]
-    
-    #print
-    print('[rank_synonyms] calculating cosine similarities',flush=True)
 
     # Rank
     ranked = sorted(zip(synonyms, similarities), key=lambda x: x[1], reverse=True)
@@ -370,21 +336,13 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
     
     returns a list of sets containing the top candidate and respective score
     """
-    #print
-    print('[rank_syn_usage] starting rank_syn_usage',flush=True)
+
     if target_word not in ft_vocab:
-        ## CHANGE  to ft_vocab from ft_model
         return []
-    
-    #print
-    print('[rank_syn_usage] check if word in model',flush=True)
     
     synonyms = synonym_bank(target_word)
     if not synonyms:
         return []
-
-    print('[rank_syn_usage] post synonym bank',flush=True)
-
 
     results = rank_synonyms(
         sentance,
@@ -393,9 +351,6 @@ def rank_syn_usage(sentance, target_word, top_n=None, threshold=None):
         top_n,
         threshold
     )
-
-    #print
-    print('[rank_synonyms] finish rank_synonyms',flush=True)
 
     results = results[:10]
     return results
@@ -442,10 +397,9 @@ def index():
 
 @app.route("/get-synonyms", methods=["POST"])
 def rank_usage():
-    print('[rank_usage] loading ft_model and ft_vocab',flush=True)
+
     model = get_model()
-    #print
-    print("HIT /get-synonyms", flush=True)
+
     data = request.get_json(force=True)
 
     sentence = data.get("sentence", "").strip()
@@ -457,7 +411,6 @@ def rank_usage():
         return jsonify([])
 
     #################
-    print("ABOUT TO CALL rank_syn_usage", flush=True)
     try:
         results = rank_syn_usage(
             sentence,
@@ -465,9 +418,7 @@ def rank_usage():
             top_n=top_n,
             threshold=threshold
         )
-        print("RETURNED FROM rank_syn_usage", flush=True)
     except Exception as e:
-        print("EXCEPTION CALLING rank_syn_usage:", repr(e), flush=True)
         raise
     ################
 
@@ -477,9 +428,6 @@ def rank_usage():
     #     top_n=top_n,
     #     threshold=threshold
     # )
-
-    #print
-    print("AFTER rank_syn_usage", flush=True)
 
     results_alt = syn_ranked_similarity(results, target_word)
 
