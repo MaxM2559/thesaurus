@@ -6,7 +6,7 @@ This project was created as an exploration of using "dumb" tools in response to 
 ---
 
 ## Demo
-
+https://github.com/user-attachments/assets/a1e33e74-1af7-4301-895f-1fe3224e3f18
 The demo video contains two examples of the program eprofrms well, decent, and poorly, in that order. the examples are: 
 
 ### GOOD
